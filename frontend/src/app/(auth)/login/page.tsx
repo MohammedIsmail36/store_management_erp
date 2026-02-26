@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,7 +28,7 @@ const loginSchema = z.object({
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -42,6 +42,14 @@ export default function LoginPage() {
     },
   });
 
+  // التحويل إذا كان المستخدم مسجل الدخول بالفعل
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      const redirectTo = searchParams.get("redirect") || "/dashboard";
+      router.replace(redirectTo);
+    }
+  }, [authLoading, isAuthenticated, router, searchParams]);
+
   // دالة تُنفذ عند إرسال النموذج
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setIsLoading(true);
@@ -51,8 +59,7 @@ export default function LoginPage() {
 
       if (response.success) {
         toast.success("تم تسجيل الدخول بنجاح! جاري التحويل...");
-        const redirectTo = searchParams.get("redirect") || "/dashboard";
-        router.replace(redirectTo);
+        // التحويل سيتم عبر useEffect عندما يتغير isAuthenticated
       } else {
         toast.error(response.message || "فشل تسجيل الدخول. يرجى التحقق من بياناتك.");
       }
@@ -64,11 +71,22 @@ export default function LoginPage() {
     }
   }
 
-  // إذا كان المستخدم مسجل الدخول بالفعل، قم بتحويله
+  // عرض حالة التحميل
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  // لا تعرض صفحة الدخول إذا كان مسجل الدخول بالفعل
   if (isAuthenticated) {
-    const redirectTo = searchParams.get("redirect") || "/dashboard";
-    router.replace(redirectTo);
-    return null;
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
   }
 
   return (
