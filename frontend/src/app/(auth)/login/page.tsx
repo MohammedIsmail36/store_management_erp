@@ -1,77 +1,59 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-// تعريف قواعد التحقق باستخدام Zod
-const loginSchema = z.object({
-  email: z.string().email("البريد الإلكتروني غير صالح."),
-  password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل."),
-  remember: z.boolean().default(false).optional(),
-});
-
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // إعداد النموذج باستخدام React Hook Form و Zod
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      remember: false,
-    },
-  });
-
-  // التحويل إذا كان المستخدم مسجل الدخول بالفعل
+  // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      const redirectTo = searchParams.get("redirect") || "/dashboard";
-      router.replace(redirectTo);
+      router.push("/dashboard");
     }
-  }, [authLoading, isAuthenticated, router, searchParams]);
+  }, [authLoading, isAuthenticated, router]);
 
-  // دالة تُنفذ عند إرسال النموذج
-  async function onSubmit(values: z.infer<typeof loginSchema>) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !password) {
+      toast.error("يرجى إدخال البريد الإلكتروني وكلمة المرور");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const response = await login(values.email, values.password);
+      const result = await login(email, password);
 
-      if (response.success) {
-        toast.success("تم تسجيل الدخول بنجاح! جاري التحويل...");
-        // التحويل سيتم عبر useEffect عندما يتغير isAuthenticated
+      if (result.success) {
+        toast.success("تم تسجيل الدخول بنجاح!");
+        // Small delay then redirect
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 500);
       } else {
-        toast.error(response.message || "فشل تسجيل الدخول. يرجى التحقق من بياناتك.");
+        toast.error(result.message || "فشل تسجيل الدخول");
       }
     } catch (error) {
       console.error(error);
-      toast.error("حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.");
+      toast.error("حدث خطأ غير متوقع");
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
-  // عرض حالة التحميل
+  // Show loading spinner while checking auth
   if (authLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -80,7 +62,7 @@ export default function LoginPage() {
     );
   }
 
-  // لا تعرض صفحة الدخول إذا كان مسجل الدخول بالفعل
+  // Don't show login form if already authenticated
   if (isAuthenticated) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -91,7 +73,7 @@ export default function LoginPage() {
 
   return (
     <div className="space-y-6">
-      {/* الشعار واسم النظام */}
+      {/* Logo and Title */}
       <div className="flex justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -102,104 +84,62 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* نموذج تسجيل الدخول */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* حقل البريد الإلكتروني */}
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>البريد الإلكتروني</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="example@email.com"
-                    type="email"
-                    disabled={isLoading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+      {/* Login Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email">البريد الإلكتروني</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="example@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
           />
+        </div>
 
-          {/* حقل كلمة المرور */}
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>كلمة المرور</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل كلمة المرور"
-                    type="password"
-                    disabled={isLoading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+        <div className="space-y-2">
+          <Label htmlFor="password">كلمة المرور</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="أدخل كلمة المرور"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
           />
+        </div>
 
-          <div className="flex items-center justify-between">
-            {/* خيار "تذكرني" */}
-            <FormField
-              control={form.control}
-              name="remember"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-y-0 space-x-reverse space-x-3">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="text-sm font-normal cursor-pointer">
-                      تذكرني
-                    </FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                جاري تسجيل الدخول...
-              </>
-            ) : (
-              "تسجيل الدخول"
-            )}
-          </Button>
-        </form>
-      </Form>
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg
+                className="animate-spin h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              جاري تسجيل الدخول...
+            </span>
+          ) : (
+            "تسجيل الدخول"
+          )}
+        </Button>
+      </form>
     </div>
   );
 }
