@@ -5,6 +5,7 @@ URL patterns for User Management and Authentication
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     UserViewSet, ProfileViewSet, CompanySettingsViewSet,
     ChangePasswordView, CustomTokenObtainPairView, logout_view
@@ -20,7 +21,7 @@ router.register(r'password', ChangePasswordView, basename='password')
 urlpatterns = [
     # JWT Authentication
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', include('rest_framework_simplejwt.urls')),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', logout_view, name='logout'),
     
     # ViewSet routes
