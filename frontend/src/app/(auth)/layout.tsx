@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
 
 export default function AuthLayout({
   children,
@@ -7,14 +6,12 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-          <Loader2 className="h-8 w-8 animate-spin text-white" />
-        </div>
-      }
-    >
-      {children}
-    </Suspense>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <Suspense fallback={<div className="text-center py-4">جاري التحميل...</div>}>
+          {children}
+        </Suspense>
+      </div>
+    </div>
   );
 }
