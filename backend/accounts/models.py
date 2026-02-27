@@ -197,6 +197,12 @@ class CompanySettings(models.Model):
         max_length=255,
         default='شركة افتراضية'
     )
+    company_activity = models.CharField(
+        _('نشاط الشركة'),
+        max_length=255,
+        blank=True,
+        null=True
+    )
     logo = models.ImageField(
         _('شعار الشركة'),
         upload_to='company/',

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 type CompanyForm = {
   name: string;
+  company_activity: string;
   logo: string | null;
   address: string;
   phone: string;
@@ -27,6 +28,7 @@ type CompanyForm = {
 
 const defaultForm: CompanyForm = {
   name: "",
+  company_activity: "",
   logo: null,
   address: "",
   phone: "",
@@ -59,6 +61,7 @@ function normalizeCompanyForm(payload: unknown): CompanyForm {
 
   return {
     name: normalizeText(data.name),
+    company_activity: normalizeText(data.company_activity),
     logo: resolveLogoUrl(data.logo),
     address: normalizeText(data.address),
     phone: normalizeText(data.phone),
@@ -119,6 +122,7 @@ export default function SettingsPage() {
   const submitPayload = useMemo(() => {
     const payload = new FormData();
     payload.append("name", form.name);
+    payload.append("company_activity", form.company_activity);
     payload.append("address", form.address);
     payload.append("phone", form.phone);
     payload.append("email", form.email);
@@ -190,6 +194,10 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label>اسم الشركة</Label>
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>نشاط الشركة</Label>
+                <Input value={form.company_activity} onChange={(e) => setForm({ ...form, company_activity: e.target.value })} placeholder="تجارة جملة، تجارة تجزئة، خدمات..." />
               </div>
               <div className="space-y-2">
                 <Label>الهاتف</Label>

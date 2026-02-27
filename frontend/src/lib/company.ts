@@ -13,12 +13,13 @@ function resolveLogoUrl(raw: unknown): string | null {
 
 export function normalizeCompany(payload: unknown): CompanyInfo {
   if (!payload || typeof payload !== "object") {
-    return { name: "Store ERP", logo: null };
+    return { name: "Store ERP", company_activity: null, logo: null };
   }
 
   const data = payload as Record<string, unknown>;
   return {
     name: typeof data.name === "string" && data.name.trim() ? data.name : "Store ERP",
+    company_activity: typeof data.company_activity === "string" ? data.company_activity : null,
     logo: resolveLogoUrl(data.logo),
   };
 }

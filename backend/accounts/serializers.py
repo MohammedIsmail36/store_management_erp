@@ -164,7 +164,7 @@ class CompanySettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanySettings
         fields = [
-            'id', 'name', 'logo', 'address', 'phone', 'email', 'website',
+            'id', 'name', 'company_activity', 'logo', 'address', 'phone', 'email', 'website',
             'tax_number', 'commercial_register', 'default_currency',
             'invoice_prefix', 'purchase_prefix', 'created_at', 'updated_at'
         ]
