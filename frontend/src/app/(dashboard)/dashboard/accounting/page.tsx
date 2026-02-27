@@ -38,10 +38,6 @@ export default function AccountsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     setLoading(true);
     const [accountsRes, typesRes] = await Promise.all([
@@ -60,6 +56,11 @@ export default function AccountsPage() {
       setAccountTypes(typesRes.data as AccountTypeOption[]);
     }
   };
+
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filteredAccounts = useMemo(() => {
     return accounts.filter((account) => {

@@ -53,10 +53,6 @@ export default function JournalEntriesPage() {
 
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     setLoading(true);
     const [entriesRes, accountsRes, fiscalYearsRes, activeFyRes] = await Promise.all([
@@ -84,6 +80,11 @@ export default function JournalEntriesPage() {
       setFormData((prev) => ({ ...prev, fiscal_year: (activeFyRes.data as FiscalYear).id }));
     }
   };
+
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filteredEntries = useMemo(() => {
     if (filterStatus === "all") return entries;
