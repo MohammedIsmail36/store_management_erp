@@ -46,13 +46,16 @@ class ApiClient {
     }
   }
 
-  private extractErrorMessage(data: Record<string, unknown>): string {
+  private extractErrorMessage(data: Record<string, unknown>, statusCode?: number): string {
+    // 1. Check for direct message
     const directMessage = data.message;
     if (typeof directMessage === "string" && directMessage.trim()) return directMessage;
 
+    // 2. Check for detail (DRF default)
     const detail = data.detail;
     if (typeof detail === "string" && detail.trim()) return detail;
 
+    // 3. Check for error object
     const errorObj = data.error;
     if (errorObj && typeof errorObj === "object") {
       const e = errorObj as { message?: unknown; details?: unknown };
@@ -70,7 +73,9 @@ class ApiClient {
       }
     }
 
+    // 4. Check for field errors
     for (const [field, value] of Object.entries(data)) {
+      if (field === "success" || field === "message") continue;
       if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string") {
         return `${field}: ${value[0]}`;
       }
@@ -79,7 +84,9 @@ class ApiClient {
       }
     }
 
-    return "حدث خطأ غير متوقع";
+    // 5. Fallback with status code
+    const statusInfo = statusCode ? ` (HTTP ${statusCode})` : "";
+    return `حدث خطأ غير متوقع${statusInfo}. يرجى المحاولة مرة أخرى.`;
   }
 
   async refreshAccessToken(): Promise<boolean> {
@@ -172,9 +179,10 @@ class ApiClient {
     const data = await this.parseJsonSafe(response);
 
     if (!response.ok) {
+      console.error("API Error:", { status: response.status, data });
       return {
         success: false,
-        message: this.extractErrorMessage(data),
+        message: this.extractErrorMessage(data, response.status),
         error: data.error as ApiResponse["error"],
       };
     }
