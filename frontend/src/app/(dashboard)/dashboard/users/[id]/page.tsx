@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import type { User } from "@/types/auth";
@@ -144,12 +144,17 @@ export default function EditUserPage() {
             </div>
             <div className="space-y-2">
               <Label>الدور</Label>
-              <Select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                {(roles.length > 0 ? roles : [{ value: "user", label: "user" }]).map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
+              <Select value={form.role} onValueChange={(value) => setForm({ ...form, role: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الدور" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(roles.length > 0 ? roles : [{ value: "user", label: "user" }]).map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="md:col-span-2 flex items-center gap-2">

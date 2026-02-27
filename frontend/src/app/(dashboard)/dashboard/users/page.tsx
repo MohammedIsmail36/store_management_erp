@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -150,13 +150,18 @@ export default function UsersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-            <option value="all">كل الأدوار</option>
-            {roles.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
-              </option>
-            ))}
+          <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="كل الأدوار" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الأدوار</SelectItem>
+              {roles.map((role) => (
+                <SelectItem key={role.value} value={role.value}>
+                  {role.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </CardContent>
       </Card>

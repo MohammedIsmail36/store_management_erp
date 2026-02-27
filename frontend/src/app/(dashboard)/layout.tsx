@@ -12,7 +12,7 @@ import type { CompanyInfo } from "@/types/company";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
-  const [company, setCompany] = useState<CompanyInfo>({ name: "Store ERP", logo: null });
+  const [company, setCompany] = useState<CompanyInfo>({ name: "Store ERP", company_activity: null, logo: null });
 
   const loadCompany = async () => {
     const response = await api.getCompanySettings();

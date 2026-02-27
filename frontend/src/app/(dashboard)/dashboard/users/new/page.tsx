@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -199,12 +199,17 @@ export default function NewUserPage() {
             </div>
             <div className="space-y-2">
               <Label>الدور</Label>
-              <Select value={form.role} onChange={(e) => setField("role", e.target.value)}>
-                {(roles.length > 0 ? roles : [{ value: "user", label: "user" }]).map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
+              <Select value={form.role} onValueChange={(value) => setField("role", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الدور" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(roles.length > 0 ? roles : [{ value: "user", label: "user" }]).map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
               {fieldErrors.role ? <p className="text-xs text-destructive">{fieldErrors.role}</p> : null}
             </div>
