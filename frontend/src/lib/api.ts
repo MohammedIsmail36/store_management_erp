@@ -267,6 +267,105 @@ class ApiClient {
   updateCompanySettings(payload: Record<string, unknown> | FormData) {
     return this.request("/auth/company/current/", { method: "PATCH", body: payload });
   }
+
+  // ============ السنة المالية ============
+
+  getFiscalYears() {
+    return this.request("/core/fiscal-years/");
+  }
+
+  getActiveFiscalYear() {
+    return this.request("/core/fiscal-years/active/");
+  }
+
+  createFiscalYear(payload: Record<string, unknown>) {
+    return this.request("/core/fiscal-years/", { method: "POST", body: payload });
+  }
+
+  activateFiscalYear(id: number) {
+    return this.request(`/core/fiscal-years/${id}/activate/`, { method: "POST" });
+  }
+
+  closeFiscalYear(id: number) {
+    return this.request(`/core/fiscal-years/${id}/close/`, { method: "POST" });
+  }
+
+  // ============ شجرة الحسابات ============
+
+  getAccounts() {
+    return this.request("/core/accounts/");
+  }
+
+  getAccountTree() {
+    return this.request("/core/accounts/tree/");
+  }
+
+  getAccount(id: number) {
+    return this.request(`/core/accounts/${id}/`);
+  }
+
+  getAccountTypes() {
+    return this.request("/core/accounts/types/");
+  }
+
+  createAccount(payload: Record<string, unknown>) {
+    return this.request("/core/accounts/", { method: "POST", body: payload });
+  }
+
+  updateAccount(id: number, payload: Record<string, unknown>) {
+    return this.request(`/core/accounts/${id}/`, { method: "PATCH", body: payload });
+  }
+
+  deleteAccount(id: number) {
+    return this.request(`/core/accounts/${id}/`, { method: "DELETE" });
+  }
+
+  recalculateAccountBalance(id: number) {
+    return this.request(`/core/accounts/${id}/recalculate_balance/`, { method: "POST" });
+  }
+
+  // ============ القيود المحاسبية ============
+
+  getJournalEntries(params?: { status?: string; fiscal_year?: string; date_from?: string; date_to?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.fiscal_year) searchParams.append("fiscal_year", params.fiscal_year);
+    if (params?.date_from) searchParams.append("date_from", params.date_from);
+    if (params?.date_to) searchParams.append("date_to", params.date_to);
+    const query = searchParams.toString();
+    return this.request(`/core/journal-entries/${query ? `?${query}` : ""}`);
+  }
+
+  getJournalEntry(id: number) {
+    return this.request(`/core/journal-entries/${id}/`);
+  }
+
+  getJournalEntryStatuses() {
+    return this.request("/core/journal-entries/statuses/");
+  }
+
+  createJournalEntry(payload: Record<string, unknown>) {
+    return this.request("/core/journal-entries/", { method: "POST", body: payload });
+  }
+
+  updateJournalEntry(id: number, payload: Record<string, unknown>) {
+    return this.request(`/core/journal-entries/${id}/`, { method: "PATCH", body: payload });
+  }
+
+  deleteJournalEntry(id: number) {
+    return this.request(`/core/journal-entries/${id}/`, { method: "DELETE" });
+  }
+
+  postJournalEntry(id: number) {
+    return this.request(`/core/journal-entries/${id}/post_entry/`, { method: "POST" });
+  }
+
+  cancelJournalEntry(id: number, reason?: string) {
+    return this.request(`/core/journal-entries/${id}/cancel_entry/`, {
+      method: "POST",
+      body: reason ? { reason } : {},
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);
