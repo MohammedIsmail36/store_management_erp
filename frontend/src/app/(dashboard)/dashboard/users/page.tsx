@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -103,6 +103,11 @@ export default function UsersPage() {
     [users, search, roleFilter]
   );
 
+  const roleFilterOptions: ComboboxOption[] = useMemo(() => [
+    { value: "all", label: "كل الأدوار" },
+    ...roles.map((role) => ({ value: role.value, label: role.label })),
+  ], [roles]);
+
   if (!isAdmin) {
     return <div className="text-sm text-muted-foreground">هذه الصفحة للمسؤول فقط.</div>;
   }
@@ -150,19 +155,12 @@ export default function UsersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="كل الأدوار" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">كل الأدوار</SelectItem>
-              {roles.map((role) => (
-                <SelectItem key={role.value} value={role.value}>
-                  {role.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            options={roleFilterOptions}
+            value={roleFilter}
+            onChange={setRoleFilter}
+            placeholder="كل الأدوار"
+          />
         </CardContent>
       </Card>
 

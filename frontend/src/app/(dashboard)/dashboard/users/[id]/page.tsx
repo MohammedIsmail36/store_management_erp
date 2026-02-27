@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import type { User } from "@/types/auth";
@@ -80,6 +80,13 @@ export default function EditUserPage() {
     return <div className="text-sm text-muted-foreground">هذه الصفحة للمسؤول فقط.</div>;
   }
 
+  const roleOptions: ComboboxOption[] = useMemo(() => 
+    roles.length > 0 
+      ? roles.map((role) => ({ value: role.value, label: role.label }))
+      : [{ value: "user", label: "user" }],
+    [roles]
+  );
+
   if (!Number.isFinite(userId)) {
     return <div className="text-sm text-muted-foreground">معرف المستخدم غير صالح.</div>;
   }
@@ -144,18 +151,12 @@ export default function EditUserPage() {
             </div>
             <div className="space-y-2">
               <Label>الدور</Label>
-              <Select value={form.role} onValueChange={(value) => setForm({ ...form, role: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر الدور" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(roles.length > 0 ? roles : [{ value: "user", label: "user" }]).map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={roleOptions}
+                value={form.role}
+                onChange={(value) => setForm({ ...form, role: value })}
+                placeholder="اختر الدور"
+              />
             </div>
             <div className="md:col-span-2 flex items-center gap-2">
               <input

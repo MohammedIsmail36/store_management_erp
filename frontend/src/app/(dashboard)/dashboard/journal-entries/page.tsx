@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,29 +55,35 @@ export default function JournalEntriesPage() {
 
   const loadData = async () => {
     setLoading(true);
-    const [entriesRes, accountsRes, fiscalYearsRes, activeFyRes] = await Promise.all([
-      api.getJournalEntries(),
-      api.getAccounts(),
-      api.getFiscalYears(),
-      api.getActiveFiscalYear(),
-    ]);
-    setLoading(false);
+    try {
+      const [entriesRes, accountsRes, fiscalYearsRes, activeFyRes] = await Promise.all([
+        api.getJournalEntries(),
+        api.getAccounts(),
+        api.getFiscalYears(),
+        api.getActiveFiscalYear(),
+      ]);
 
-    if (entriesRes.success && entriesRes.data) {
-      setEntries(entriesRes.data as JournalEntryListItem[]);
-    }
+      if (entriesRes.success && entriesRes.data) {
+        setEntries(entriesRes.data as JournalEntryListItem[]);
+      }
 
-    if (accountsRes.success && accountsRes.data) {
-      setAccounts((accountsRes.data as Account[]).filter((a) => !a.is_header && a.is_active));
-    }
+      if (accountsRes.success && accountsRes.data) {
+        setAccounts((accountsRes.data as Account[]).filter((a) => !a.is_header && a.is_active));
+      }
 
-    if (fiscalYearsRes.success && fiscalYearsRes.data) {
-      setFiscalYears(fiscalYearsRes.data as FiscalYear[]);
-    }
+      if (fiscalYearsRes.success && fiscalYearsRes.data) {
+        setFiscalYears(fiscalYearsRes.data as FiscalYear[]);
+      }
 
-    if (activeFyRes.success && activeFyRes.data) {
-      setActiveFiscalYear(activeFyRes.data as FiscalYear);
-      setFormData((prev) => ({ ...prev, fiscal_year: (activeFyRes.data as FiscalYear).id }));
+      if (activeFyRes.success && activeFyRes.data) {
+        setActiveFiscalYear(activeFyRes.data as FiscalYear);
+        setFormData((prev) => ({ ...prev, fiscal_year: (activeFyRes.data as FiscalYear).id }));
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+      toast.error("حدث خطأ أثناء تحميل البيانات");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,6 +91,29 @@ export default function JournalEntriesPage() {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Combobox options
+  const statusFilterOptions: ComboboxOption[] = useMemo(() => [
+    { value: "all", label: "جميع الحالات" },
+    { value: "draft", label: "مسودة" },
+    { value: "posted", label: "مرحل" },
+    { value: "cancelled", label: "ملغي" },
+  ], []);
+
+  const fiscalYearOptions: ComboboxOption[] = useMemo(() => 
+    fiscalYears
+      .filter((fy) => !fy.is_closed)
+      .map((fy) => ({ value: fy.id.toString(), label: fy.name })),
+    [fiscalYears]
+  );
+
+  const accountOptions: ComboboxOption[] = useMemo(() => 
+    accounts.map((acc) => ({
+      value: acc.id.toString(),
+      label: `${acc.code} - ${acc.name}`,
+    })),
+    [accounts]
+  );
 
   const filteredEntries = useMemo(() => {
     if (filterStatus === "all") return entries;
@@ -105,7 +134,6 @@ export default function JournalEntriesPage() {
 
   const handleOpenDialog = (entry?: JournalEntryListItem) => {
     if (entry) {
-      // Load full entry data for editing
       api.getJournalEntry(entry.id).then((res) => {
         if (res.success && res.data) {
           const fullEntry = res.data as JournalEntry;
@@ -313,17 +341,13 @@ export default function JournalEntriesPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-wrap gap-4">
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="فلترة حسب الحالة" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الحالات</SelectItem>
-                <SelectItem value="draft">مسودة</SelectItem>
-                <SelectItem value="posted">مرحل</SelectItem>
-                <SelectItem value="cancelled">ملغي</SelectItem>
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={statusFilterOptions}
+              value={filterStatus}
+              onChange={setFilterStatus}
+              placeholder="فلترة حسب الحالة"
+              className="w-48"
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -423,21 +447,13 @@ export default function JournalEntriesPage() {
               </div>
               <div className="space-y-2">
                 <Label>السنة المالية *</Label>
-                <Select
+                <Combobox
+                  options={fiscalYearOptions}
                   value={formData.fiscal_year.toString()}
-                  onValueChange={(v) => setFormData({ ...formData, fiscal_year: parseInt(v) })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fiscalYears.filter((fy) => !fy.is_closed).map((fy) => (
-                      <SelectItem key={fy.id} value={fy.id.toString()}>
-                        {fy.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setFormData({ ...formData, fiscal_year: parseInt(value) })}
+                  placeholder="اختر السنة المالية"
+                  emptyMessage="لا توجد سنوات مالية"
+                />
               </div>
               <div className="space-y-2">
                 <Label>المرجع</Label>
@@ -481,21 +497,13 @@ export default function JournalEntriesPage() {
                     {formData.lines.map((line, index) => (
                       <TableRow key={index}>
                         <TableCell>
-                          <Select
+                          <Combobox
+                            options={accountOptions}
                             value={line.account.toString()}
-                            onValueChange={(v) => handleLineChange(index, "account", parseInt(v))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر الحساب" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {accounts.map((acc) => (
-                                <SelectItem key={acc.id} value={acc.id.toString()}>
-                                  {acc.code} - {acc.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            onChange={(value) => handleLineChange(index, "account", parseInt(value))}
+                            placeholder="اختر الحساب"
+                            emptyMessage="لا توجد حسابات"
+                          />
                         </TableCell>
                         <TableCell>
                           <Input

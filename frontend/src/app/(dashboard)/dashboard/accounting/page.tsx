@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
@@ -61,6 +61,30 @@ export default function AccountsPage() {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Combobox options for filter
+  const filterTypeOptions: ComboboxOption[] = useMemo(() => [
+    { value: "all", label: "جميع الأنواع" },
+    ...accountTypes.map((type) => ({ value: type.value, label: type.label })),
+  ], [accountTypes]);
+
+  // Combobox options for account type in form
+  const accountTypeOptions: ComboboxOption[] = useMemo(() => 
+    accountTypes.map((type) => ({ value: type.value, label: type.label })),
+    [accountTypes]
+  );
+
+  // Combobox options for parent account
+  const parentAccountOptions: ComboboxOption[] = useMemo(() => {
+    const headerAccounts = accounts.filter((a) => a.is_header && a.id !== editingAccount?.id);
+    return [
+      { value: "none", label: "بدون أب (حساب رئيسي)" },
+      ...headerAccounts.map((account) => ({
+        value: account.id.toString(),
+        label: `${account.code} - ${account.name}`,
+      })),
+    ];
+  }, [accounts, editingAccount]);
 
   const filteredAccounts = useMemo(() => {
     return accounts.filter((account) => {
@@ -193,19 +217,13 @@ export default function AccountsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="فلترة حسب النوع" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الأنواع</SelectItem>
-                {accountTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={filterTypeOptions}
+              value={filterType}
+              onChange={setFilterType}
+              placeholder="فلترة حسب النوع"
+              className="w-48"
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -300,23 +318,12 @@ export default function AccountsPage() {
               </div>
               <div className="space-y-2">
                 <Label>نوع الحساب *</Label>
-                <Select
+                <Combobox
+                  options={accountTypeOptions}
                   value={formData.account_type}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, account_type: value as AccountType })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accountTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setFormData({ ...formData, account_type: value as AccountType })}
+                  placeholder="اختر النوع"
+                />
               </div>
             </div>
 
@@ -331,26 +338,13 @@ export default function AccountsPage() {
 
             <div className="space-y-2">
               <Label>الحساب الأب</Label>
-              <Select
-                value={formData.parent?.toString() || ""}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, parent: value ? parseInt(value) : null })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="بدون أب (حساب رئيسي)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">بدون أب</SelectItem>
-                  {accounts
-                    .filter((a) => a.is_header && a.id !== editingAccount?.id)
-                    .map((account) => (
-                      <SelectItem key={account.id} value={account.id.toString()}>
-                        {account.code} - {account.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={parentAccountOptions}
+                value={formData.parent?.toString() || "none"}
+                onChange={(value) => setFormData({ ...formData, parent: value === "none" ? null : parseInt(value) })}
+                placeholder="بدون أب (حساب رئيسي)"
+                emptyMessage="لا توجد حسابات رئيسية"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
