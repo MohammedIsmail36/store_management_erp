@@ -1,17 +1,11 @@
-import { Suspense } from "react";
+﻿import { Card, CardContent } from "@/components/ui/card";
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <Suspense fallback={<div className="text-center py-4">جاري التحميل...</div>}>
-          {children}
-        </Suspense>
-      </div>
+    <div className="min-h-screen grid place-items-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent>{children}</CardContent>
+      </Card>
     </div>
   );
 }

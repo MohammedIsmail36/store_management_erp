@@ -66,14 +66,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
-        user = User.objects.create_user(**validated_data)
-        user.set_password(password)
-        user.save()
-        
-        # Create profile
-        Profile.objects.create(user=user)
-        
-        return user
+        # Profile is created by post_save signal in accounts.signals
+        return User.objects.create_user(password=password, **validated_data)
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

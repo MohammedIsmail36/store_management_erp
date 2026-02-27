@@ -1,134 +1,89 @@
-"use client";
+﻿"use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { api } from "@/lib/api";
+import type { User } from "@/types/auth";
 
-interface User {
-  id: number;
-  email: string;
-  first_name: string;
-  last_name: string;
-  full_name: string;
-  role: string;
-  role_display: string;
-  is_admin: boolean;
-  is_active: boolean;
-}
-
-interface AuthContextType {
+type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  logout: () => void;
   isAdmin: boolean;
-}
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isAuthenticated = !!user;
-  const isAdmin = user?.is_admin ?? false;
+  const refreshUser = useCallback(async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    if (!token) {
+      setUser(null);
+      return;
+    }
 
-  // Check auth on mount
-  useEffect(() => {
-    checkAuth();
+    const response = await api.getCurrentUser();
+    if (response.success && response.data) {
+      setUser(response.data as User);
+      localStorage.setItem("user", JSON.stringify(response.data));
+      return;
+    }
+
+    api.clearSession();
+    setUser(null);
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
+  useEffect(() => {
+    const run = async () => {
+      try {
+        await refreshUser();
+      } finally {
         setIsLoading(false);
-        return;
       }
+    };
+    run();
+  }, [refreshUser]);
 
-      const response = await fetch(`${API_URL}/auth/users/me/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setUser(data.data as User);
-        }
-      } else {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
-    } finally {
-      setIsLoading(false);
+  const login = useCallback(async (email: string, password: string) => {
+    const response = await api.login(email, password);
+    if (!response.success) {
+      return { success: false, message: response.message };
     }
-  };
 
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await fetch(`${API_URL}/auth/token/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    await refreshUser();
+    return { success: true };
+  }, [refreshUser]);
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Save tokens
-        localStorage.setItem("access_token", data.data.access);
-        localStorage.setItem("refresh_token", data.data.refresh);
-        setUser(data.data.user as User);
-        return { success: true };
-      } else {
-        return { success: false, message: data.message || "فشل تسجيل الدخول" };
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      return { success: false, message: "تعذر الاتصال بالخادم" };
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+  const logout = useCallback(async () => {
+    await api.logout();
     setUser(null);
-    window.location.href = "/login";
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated,
-        login,
-        logout,
-        isAdmin,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      isLoading,
+      isAuthenticated: !!user,
+      isAdmin: user?.role === "admin" || !!user?.is_admin,
+      login,
+      logout,
+      refreshUser,
+    }),
+    [user, isLoading, login, logout, refreshUser]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
     throw new Error("useAuth must be used within AuthProvider");
   }
-  return context;
+  return ctx;
 }

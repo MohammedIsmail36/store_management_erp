@@ -1,87 +1,99 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
-import { Bell, Search, Settings, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import type { CompanyInfo } from "@/types/company";
 
-export function Header() {
+function IconUser() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c1.5-3 4.5-5 8-5s6.5 2 8 5" />
+    </svg>
+  );
+}
+
+function IconChevron() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function IconLogout() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
+
+export function Header({ company }: { company: CompanyInfo }) {
   const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const onClickOutside = (event: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-30 h-16 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-      <div className="flex h-full items-center justify-between px-6">
-        {/* Search */}
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="بحث..."
-              className="w-64 pr-10 bg-muted/50 border-0"
-            />
-          </div>
-        </div>
+    <header className="flex h-16 items-center justify-between border-b border-border bg-white/70 px-6 backdrop-blur">
+      <div>
+        <h2 className="text-base font-semibold">مرحبًا، {user?.first_name}</h2>
+        <p className="text-xs text-muted-foreground">نظرة سريعة على {company.name}</p>
+      </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-          {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -left-1 h-5 w-5 p-0 flex items-center justify-center">
-              0
-            </Badge>
-          </Button>
+      <div className="relative" ref={menuRef}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => setOpen((v) => !v)}
+          className="h-10 gap-2 border border-border bg-white px-2 hover:bg-secondary/60"
+        >
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-primary">
+            <IconUser />
+          </span>
+          <span className="max-w-40 truncate text-sm font-medium">{user?.full_name || "المستخدم"}</span>
+          <IconChevron />
+        </Button>
 
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">{user?.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {user?.role_display}
-                  </p>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel>حسابي</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile" className="cursor-pointer">
-                  <User className="h-4 w-4 ml-2" />
-                  <span>الملف الشخصي</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings" className="cursor-pointer">
-                  <Settings className="h-4 w-4 ml-2" />
-                  <span>الإعدادات</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={logout}
-                className="text-destructive cursor-pointer"
+        {open ? (
+          <div className="absolute left-0 z-20 mt-2 w-60 rounded-xl border border-border bg-white p-2 shadow-lg">
+            <div className="border-b border-border px-2 pb-2">
+              <p className="text-sm font-semibold">{user?.full_name}</p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
+            </div>
+            <div className="pt-2">
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-secondary"
               >
-                تسجيل الخروج
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                <IconUser />
+                <span>الملف الشخصي</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="mt-1 flex w-full items-center gap-2 rounded-md px-2 py-2 text-right text-sm text-destructive hover:bg-secondary"
+              >
+                <IconLogout />
+                <span>تسجيل الخروج</span>
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </header>
   );

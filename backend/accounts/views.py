@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model, authenticate
+from django.db import IntegrityError
 from django.utils.translation import gettext_lazy as _
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -124,7 +125,13 @@ class UserViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
+        try:
+            user = serializer.save()
+        except IntegrityError:
+            return Response({
+                'success': False,
+                'message': _('بيانات المستخدم غير صالحة أو موجودة مسبقًا')
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         return Response({
             'success': True,
