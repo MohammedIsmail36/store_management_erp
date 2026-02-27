@@ -15,7 +15,7 @@ type NavItem = {
 
 const items: NavItem[] = [
   { href: "/dashboard", label: "الرئيسية" },
-  { href: "/dashboard/accounts", label: "شجرة الحسابات", accountantOnly: true },
+  { href: "/dashboard/accounting", label: "شجرة الحسابات", accountantOnly: true },
   { href: "/dashboard/journal-entries", label: "القيود المحاسبية", accountantOnly: true },
   { href: "/dashboard/users", label: "المستخدمين", adminOnly: true },
   { href: "/dashboard/profile", label: "الملف الشخصي" },
