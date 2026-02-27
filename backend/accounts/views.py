@@ -3,7 +3,7 @@
 Views for User Management and Authentication
 """
 
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, parsers
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -289,6 +289,7 @@ class CompanySettingsViewSet(viewsets.ModelViewSet):
     """
     serializer_class = CompanySettingsSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
     
     def get_queryset(self):
         return CompanySettings.objects.all()
@@ -312,7 +313,13 @@ class CompanySettingsViewSet(viewsets.ModelViewSet):
         الحصول على أو تحديث الإعدادات الحالية
         Get or update current settings
         """
-        settings = CompanySettings.get_settings()
+        try:
+            settings = CompanySettings.get_settings()
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'خطأ في الحصول على الإعدادات: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         if request.method == 'PATCH':
             if not request.user.is_admin:
@@ -321,22 +328,34 @@ class CompanySettingsViewSet(viewsets.ModelViewSet):
                     'message': _('ليس لديك صلاحية لتعديل الإعدادات')
                 }, status=status.HTTP_403_FORBIDDEN)
             
-            serializer = self.get_serializer(
-                settings, data=request.data, partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            try:
+                serializer = self.get_serializer(
+                    settings, data=request.data, partial=True
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response({
+                    'success': True,
+                    'message': _('تم تحديث الإعدادات بنجاح'),
+                    'data': serializer.data
+                })
+            except Exception as e:
+                return Response({
+                    'success': False,
+                    'message': f'خطأ في تحديث الإعدادات: {str(e)}'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        try:
+            serializer = self.get_serializer(settings)
             return Response({
                 'success': True,
-                'message': _('تم تحديث الإعدادات بنجاح'),
                 'data': serializer.data
             })
-        
-        serializer = self.get_serializer(settings)
-        return Response({
-            'success': True,
-            'data': serializer.data
-        })
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'خطأ في قراءة الإعدادات: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['post'])
