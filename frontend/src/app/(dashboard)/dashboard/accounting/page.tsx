@@ -40,20 +40,28 @@ export default function AccountsPage() {
 
   const loadData = async () => {
     setLoading(true);
-    const [accountsRes, typesRes] = await Promise.all([
-      api.getAccounts(),
-      api.getAccountTypes(),
-    ]);
-    setLoading(false);
+    try {
+      const [accountsRes, typesRes] = await Promise.all([
+        api.getAccounts(),
+        api.getAccountTypes(),
+      ]);
 
-    if (accountsRes.success && accountsRes.data) {
-      setAccounts(accountsRes.data as Account[]);
-    } else {
-      toast.error(accountsRes.message || "فشل تحميل الحسابات");
-    }
+      if (accountsRes.success && accountsRes.data) {
+        const data = accountsRes.data;
+        setAccounts(Array.isArray(data) ? data : []);
+      } else {
+        toast.error(accountsRes.message || "فشل تحميل الحسابات");
+      }
 
-    if (typesRes.success && typesRes.data) {
-      setAccountTypes(typesRes.data as AccountTypeOption[]);
+      if (typesRes.success && typesRes.data) {
+        const data = typesRes.data;
+        setAccountTypes(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+      toast.error("حدث خطأ أثناء تحميل البيانات");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,20 +71,24 @@ export default function AccountsPage() {
   }, []);
 
   // Combobox options for filter
-  const filterTypeOptions: ComboboxOption[] = useMemo(() => [
-    { value: "all", label: "جميع الأنواع" },
-    ...accountTypes.map((type) => ({ value: type.value, label: type.label })),
-  ], [accountTypes]);
+  const filterTypeOptions: ComboboxOption[] = useMemo(() => {
+    const types = Array.isArray(accountTypes) ? accountTypes : [];
+    return [
+      { value: "all", label: "جميع الأنواع" },
+      ...types.map((type) => ({ value: type.value, label: type.label })),
+    ];
+  }, [accountTypes]);
 
   // Combobox options for account type in form
-  const accountTypeOptions: ComboboxOption[] = useMemo(() => 
-    accountTypes.map((type) => ({ value: type.value, label: type.label })),
-    [accountTypes]
-  );
+  const accountTypeOptions: ComboboxOption[] = useMemo(() => {
+    const types = Array.isArray(accountTypes) ? accountTypes : [];
+    return types.map((type) => ({ value: type.value, label: type.label }));
+  }, [accountTypes]);
 
   // Combobox options for parent account
   const parentAccountOptions: ComboboxOption[] = useMemo(() => {
-    const headerAccounts = accounts.filter((a) => a.is_header && a.id !== editingAccount?.id);
+    const accs = Array.isArray(accounts) ? accounts : [];
+    const headerAccounts = accs.filter((a) => a.is_header && a.id !== editingAccount?.id);
     return [
       { value: "none", label: "بدون أب (حساب رئيسي)" },
       ...headerAccounts.map((account) => ({
@@ -87,7 +99,8 @@ export default function AccountsPage() {
   }, [accounts, editingAccount]);
 
   const filteredAccounts = useMemo(() => {
-    return accounts.filter((account) => {
+    const accs = Array.isArray(accounts) ? accounts : [];
+    return accs.filter((account) => {
       const matchesSearch =
         account.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.name.toLowerCase().includes(searchTerm.toLowerCase());

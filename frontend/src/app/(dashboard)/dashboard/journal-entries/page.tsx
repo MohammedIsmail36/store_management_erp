@@ -64,15 +64,18 @@ export default function JournalEntriesPage() {
       ]);
 
       if (entriesRes.success && entriesRes.data) {
-        setEntries(entriesRes.data as JournalEntryListItem[]);
+        const data = entriesRes.data;
+        setEntries(Array.isArray(data) ? data : []);
       }
 
       if (accountsRes.success && accountsRes.data) {
-        setAccounts((accountsRes.data as Account[]).filter((a) => !a.is_header && a.is_active));
+        const data = accountsRes.data as Account[];
+        setAccounts(Array.isArray(data) ? data.filter((a) => !a.is_header && a.is_active) : []);
       }
 
       if (fiscalYearsRes.success && fiscalYearsRes.data) {
-        setFiscalYears(fiscalYearsRes.data as FiscalYear[]);
+        const data = fiscalYearsRes.data;
+        setFiscalYears(Array.isArray(data) ? data : []);
       }
 
       if (activeFyRes.success && activeFyRes.data) {
@@ -100,22 +103,23 @@ export default function JournalEntriesPage() {
     { value: "cancelled", label: "ملغي" },
   ], []);
 
-  const fiscalYearOptions: ComboboxOption[] = useMemo(() => 
-    fiscalYears
+  const fiscalYearOptions: ComboboxOption[] = useMemo(() => {
+    if (!Array.isArray(fiscalYears)) return [];
+    return fiscalYears
       .filter((fy) => !fy.is_closed)
-      .map((fy) => ({ value: fy.id.toString(), label: fy.name })),
-    [fiscalYears]
-  );
+      .map((fy) => ({ value: fy.id.toString(), label: fy.name }));
+  }, [fiscalYears]);
 
-  const accountOptions: ComboboxOption[] = useMemo(() => 
-    accounts.map((acc) => ({
+  const accountOptions: ComboboxOption[] = useMemo(() => {
+    if (!Array.isArray(accounts)) return [];
+    return accounts.map((acc) => ({
       value: acc.id.toString(),
       label: `${acc.code} - ${acc.name}`,
-    })),
-    [accounts]
-  );
+    }));
+  }, [accounts]);
 
   const filteredEntries = useMemo(() => {
+    if (!Array.isArray(entries)) return [];
     if (filterStatus === "all") return entries;
     return entries.filter((e) => e.status === filterStatus);
   }, [entries, filterStatus]);
